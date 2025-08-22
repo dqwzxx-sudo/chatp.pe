@@ -16,7 +16,7 @@ header {
 header .header-left { display:flex; align-items:center; gap:8px; }
 header .header-left img { width:40px; height:40px; border-radius:8px; }
 header .header-left h1 { font-size:1.2rem; margin:0; color:var(--primary); }
-header .header-right {   margin-right: 30px; display:flex; align-items:center; gap:12px; }
+header .header-right {margin-right: 30px; display:flex; align-items:center; gap:12px; }
 header .header-right .avatar { width:36px; height:36px; border-radius:50%; border:1px solid var(--border); }
 header .header-right .name { font-weight:600; color:#333; }
 header .header-right .btn { padding:6px 10px; border:1px solid var(--border); border-radius:8px; background:#fff; cursor:pointer; transition:all 0.2s; }
@@ -33,6 +33,17 @@ main { padding-top:70px; max-width:720px; margin:0 auto; }
 .msg .time { color:var(--muted); font-size:12px; }
 .msg .bubble { margin-left:48px; display:flex; flex-direction:column; gap:4px; }
 .msg img.content, .msg video.content, .msg iframe { max-width:280px; border-radius:10px; border:1px solid var(--border); }
+
+/* Videos TikTok más grandes */
+.msg iframe.tiktok-video { 
+  width: 110%;       /* ocupa todo el ancho del contenedor */
+  max-width: none;  /* opcional: limita si el chat es muy ancho */
+  height: 600px;     /* más alto para TikTok */
+  border-radius:12px; 
+  border:1px solid var(--border); 
+}
+
+
 
 .controls { display:flex; gap:8px; margin-top:12px; flex-wrap:wrap; }
 .controls input[type="text"], .controls input[type="url"], .controls input[type="file"] { flex:1; padding:10px 12px; border:1px solid var(--border); border-radius:10px; }
@@ -71,7 +82,6 @@ main { padding-top:70px; max-width:720px; margin:0 auto; }
   </div>
 </header>
 
-
 <main>
   <div id="chat"></div>
 
@@ -85,7 +95,7 @@ main { padding-top:70px; max-width:720px; margin:0 auto; }
 
   <div class="controls">
     <input id="fileInput" type="file" accept="image/*,video/*">
-    <input id="linkInput" type="url" placeholder="O pega un link de imagen/video…">
+    <input id="linkInput" type="url" placeholder="O pega un link de imagen/video/TikTok…">
     <button id="sendBtn" class="btn" disabled>Enviar</button>
   </div>
 
@@ -136,9 +146,16 @@ let nickname = "";
 
 function fmtTime(ts){ return new Date(ts).toLocaleTimeString([], {hour:"2-digit", minute:"2-digit"}); }
 
+// Detecta YouTube y TikTok
 function parseVideoUrl(url){
+  // YouTube
   const ytMatch = url.match(/(?:youtu\.be\/|youtube\.com\/watch\?v=)([a-zA-Z0-9_-]+)/);
-  if(ytMatch) return `https://www.youtube.com/embed/${ytMatch[1]}`;
+  if(ytMatch) return { type:"youtube", embed:`https://www.youtube.com/embed/${ytMatch[1]}` };
+
+  // TikTok
+  const ttMatch = url.match(/(?:tiktok\.com\/.+\/video\/)(\d+)/);
+  if(ttMatch) return { type:"tiktok", embed:`https://www.tiktok.com/embed/${ttMatch[1]}` };
+
   return null;
 }
 
@@ -166,15 +183,15 @@ function renderMessage({ name, photo, text, url, ts }){
   bubble.className = "bubble";
 
   if(url){
-    const videoEmbed = parseVideoUrl(url);
-    if(videoEmbed){
+    const videoData = parseVideoUrl(url);
+    if(videoData){
       const iframe = document.createElement("iframe");
-      iframe.src = videoEmbed;
-      iframe.width = "280";
-      iframe.height = "158";
+      iframe.src = videoData.embed;
+      iframe.width = "100%"; 
       iframe.frameBorder = "0";
       iframe.allow = "accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture";
       iframe.allowFullscreen = true;
+      if(videoData.type === "tiktok") iframe.classList.add("tiktok-video"); // aplica CSS para ancho/alto
       bubble.appendChild(iframe);
     } else if(url.match(/\.(mp4|webm|ogg)$/i)){
       const vid = document.createElement("video");
@@ -262,7 +279,7 @@ async function sendMessage(){
 sendBtn.addEventListener("click", sendMessage);
 msgInput.addEventListener("keydown", (e)=>{if(e.key==="Enter") sendMessage();});
 
-loginBtn?.addEventListener("click", ()=>signInWithPopup(auth,provider));
+loginBtn.addEventListener("click", ()=>signInWithPopup(auth,provider));
 logoutBtn.addEventListener("click", ()=>signOut(auth));
 
 onAuthStateChanged(auth,user=>{
@@ -270,13 +287,13 @@ onAuthStateChanged(auth,user=>{
   if(user){
     userName.textContent = user.displayName||user.email||"Usuario";
     if(user.photoURL){ userPhoto.src=user.photoURL; userPhoto.style.display="block"; } else userPhoto.style.display="none";
-    loginBtn?.classList.add("hidden");
+    loginBtn.classList.add("hidden");
     logoutBtn.classList.remove("hidden");
     sendBtn.disabled = false;
   } else {
     userName.textContent = "No has iniciado sesión";
     userPhoto.style.display="none";
-    loginBtn?.classList.remove("hidden");
+    loginBtn.classList.remove("hidden");
     logoutBtn.classList.add("hidden");
     sendBtn.disabled = true;
   }
