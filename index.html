@@ -1,266 +1,237 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-  <meta charset="UTF-8" />
-  <meta
-    name="viewport"
-    content="width=device-width, initial-scale=1.0"/>
-  <title>Chat en Tiempo Real (Texto + Imágenes)</title>
-  <style>
-    :root { --border:#e5e7eb; --bg:#fafafa; --muted:#6b7280; }
-    body { font-family: system-ui, Arial, sans-serif; max-width: 720px; margin: 24px auto; padding: 0 16px; }
-    header { display:flex; align-items:center; justify-content:space-between; margin-bottom:16px; }
-    .user-pill { display:flex; align-items:center; gap:10px; }
-    .avatar { width:40px; height:40px; border-radius:50%; object-fit:cover; border:1px solid var(--border); }
-    .btn { padding:8px 12px; border:1px solid var(--border); background:#fff; border-radius:10px; cursor:pointer; }
-    .btn:disabled { opacity:.6; cursor:not-allowed; }
-    #chat { border:1px solid var(--border); background:#fff; height:420px; overflow-y:auto; padding:12px; border-radius:12px; }
-    .msg { display:flex; gap:10px; padding:10px 8px; border-bottom:1px solid var(--border); }
-    .msg:last-child { border-bottom:none; }
-    .msg .meta { display:flex; align-items:center; gap:8px; }
-    .msg .name { font-weight:600; }
-    .msg .time { color:var(--muted); font-size:12px; }
-    .msg .bubble { margin-left:48px; }
-    .msg img.content { max-width:280px; border-radius:10px; border:1px solid var(--border); }
-    .controls { display:flex; gap:8px; margin-top:12px; }
-    .controls input[type="text"] { flex:1; padding:10px 12px; border:1px solid var(--border); border-radius:10px; }
-    .uploader { display:flex; align-items:center; gap:8px; margin-top:8px; }
-    .hint { color:var(--muted); font-size:12px; margin-top:4px; }
-    .hidden { display:none; }
-  </style>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Chat en Tiempo Real (Texto + Imagen + Apodo)</title>
+<style>
+:root { --border:#e5e7eb; --bg:#fafafa; --muted:#6b7280; }
+body { font-family: system-ui, Arial, sans-serif; max-width: 720px; margin: 24px auto; padding: 0 16px; }
+header { display:flex; align-items:center; justify-content:space-between; margin-bottom:16px; }
+.user-pill { display:flex; align-items:center; gap:10px; }
+.avatar { width:40px; height:40px; border-radius:50%; object-fit:cover; border:1px solid var(--border); }
+.btn { padding:8px 12px; border:1px solid var(--border); background:#fff; border-radius:10px; cursor:pointer; }
+.btn:disabled { opacity:.6; cursor:not-allowed; }
+#chat { border:1px solid var(--border); background:#fff; height:420px; overflow-y:auto; padding:12px; border-radius:12px; }
+.msg { display:flex; gap:10px; padding:10px 8px; border-bottom:1px solid var(--border); }
+.msg:last-child { border-bottom:none; }
+.msg .meta { display:flex; align-items:center; gap:8px; }
+.msg .name { font-weight:600; }
+.msg .time { color:var(--muted); font-size:12px; }
+.msg .bubble { margin-left:48px; }
+.msg img.content { max-width:280px; border-radius:10px; border:1px solid var(--border); }
+.controls { display:flex; gap:8px; margin-top:12px; }
+.controls input[type="text"], .controls input[type="url"], .controls input[type="file"] { flex:1; padding:10px 12px; border:1px solid var(--border); border-radius:10px; }
+.hint { color:var(--muted); font-size:12px; margin-top:4px; }
+.hidden { display:none; }
+#linkPreview { max-width:200px; display:none; border:1px solid #ccc; border-radius:8px; margin-top:4px; }
+</style>
 </head>
 <body>
-  <header>
-    <div class="user-pill" id="user-pill">
-      <img id="user-photo" class="avatar" src="" alt="avatar" style="display:none;">
-      <div id="user-name" class="name">No has iniciado sesión</div>
-    </div>
-    <div>
-      <button id="loginBtn" class="btn">Iniciar sesión con Google</button>
-      <button id="logoutBtn" class="btn hidden">Cerrar sesión</button>
-    </div>
-  </header>
+<header>
+  <div class="user-pill" id="user-pill">
+    <img id="user-photo" class="avatar" src="" alt="avatar" style="display:none;">
+    <div id="user-name" class="name">No has iniciado sesión</div>
+  </div>
+  <div>
+    <button id="loginBtn" class="btn">Iniciar sesión con Google</button>
+    <button id="logoutBtn" class="btn hidden">Cerrar sesión</button>
+  </div>
+</header>
 
-  <main>
-    <div id="chat"></div>
+<main>
+  <div id="chat"></div>
 
-    <div class="controls">
-      <input id="msgInput" type="text" placeholder="Escribe un mensaje…" />
-      <button id="sendBtn" class="btn" disabled>Enviar</button>
-    </div>
+  <div class="controls">
+    <input id="nicknameInput" type="text" placeholder="Ingresa tu apodo" />
+  </div>
 
-    <div class="uploader">
-      <input id="fileInput" type="file" accept="image/*" />
-      <button id="uploadBtn" class="btn" disabled>Enviar imagen/GIF</button>
-    </div>
-    <div class="hint">Consejo: admite PNG, JPG y GIF. Se suben a Firebase Storage y el enlace se guarda en la conversación.</div>
-  </main>
+  <div class="controls">
+    <input id="msgInput" type="text" placeholder="Escribe un mensaje…" />
+  </div>
 
-  <!-- Firebase SDK (v11 modular) -->
-  <script type="module">
-    // --- Imports Firebase ---
-    import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-app.js";
-    import {
-      getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged
-    } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-auth.js";
-    import {
-      getDatabase, ref as dbRef, push, onChildAdded, serverTimestamp, set
-    } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-database.js";
-    import {
-      getStorage, ref as stRef, uploadBytes, getDownloadURL
-    } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-storage.js";
+  <div class="controls" style="margin-top:8px;">
+    <input id="fileInput" type="file" accept="image/*" />
+    <input id="linkInput" type="url" placeholder="O pega un link de imagen…" />
+    <button id="sendBtn" class="btn" disabled>Enviar</button>
+  </div>
 
-    // --- Tu configuración de Firebase ---
-    const firebaseConfig = {
-      apiKey: "AIzaSyAu-L2QmUixoxM3SzYfV55ZL85CSHq_P6Y",
-      authDomain: "chat-realtime-2b260.firebaseapp.com",
-      databaseURL: "https://chat-realtime-2b260-default-rtdb.firebaseio.com",
-      projectId: "chat-realtime-2b260",
-      storageBucket: "chat-realtime-2b260.firebasestorage.app",
-      messagingSenderId: "773600463978",
-      appId: "1:773600463978:web:9ac8dc5089a4642c768e13",
-      measurementId: "G-G7CTT0BNQ4"
-    };
+  <div class="controls">
+    <img id="linkPreview" alt="Previsualización">
+  </div>
 
-    // --- Inicializa Firebase ---
-    const app = initializeApp(firebaseConfig);
-    const auth = getAuth(app);
-    const provider = new GoogleAuthProvider();
-    const db = getDatabase(app);
-    const storage = getStorage(app);
+  <div class="hint">Puedes enviar texto y/o imagen (archivo o link) con un solo botón.</div>
+</main>
 
-    // --- Referencias DOM ---
-    const loginBtn = document.getElementById("loginBtn");
-    const logoutBtn = document.getElementById("logoutBtn");
-    const userPhoto = document.getElementById("user-photo");
-    const userName = document.getElementById("user-name");
-    const chatBox = document.getElementById("chat");
-    const msgInput = document.getElementById("msgInput");
-    const sendBtn = document.getElementById("sendBtn");
-    const fileInput = document.getElementById("fileInput");
-    const uploadBtn = document.getElementById("uploadBtn");
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-app.js";
+import { getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-auth.js";
+import { getDatabase, ref as dbRef, push, onChildAdded } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-database.js";
 
-    let currentUser = null;
+// --- Configuración Firebase ---
+const firebaseConfig = {
+  apiKey: "AIzaSyAu-L2QmUixoxM3SzYfV55ZL85CSHq_P6Y",
+  authDomain: "chat-realtime-2b260.firebaseapp.com",
+  databaseURL: "https://chat-realtime-2b260-default-rtdb.firebaseio.com",
+  projectId: "chat-realtime-2b260",
+  storageBucket: "chat-realtime-2b260.appspot.com",
+  messagingSenderId: "773600463978",
+  appId: "1:773600463978:web:9ac8dc508a4642c768e13",
+  measurementId: "G-G7CTT0BNQ4"
+};
 
-    // --- Util: hora legible ---
-    function fmtTime(ts) {
-      try {
-        return new Date(ts).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
-      } catch { return ""; }
-    }
+const app = initializeApp(firebaseConfig);
+const auth = getAuth(app);
+const provider = new GoogleAuthProvider();
+const db = getDatabase(app);
 
-    // --- Render de un mensaje ---
-    function renderMessage({ name, photo, text, url, type, ts }) {
-      const row = document.createElement("div");
-      row.className = "msg";
+// --- DOM ---
+const loginBtn = document.getElementById("loginBtn");
+const logoutBtn = document.getElementById("logoutBtn");
+const userPhoto = document.getElementById("user-photo");
+const userName = document.getElementById("user-name");
+const chatBox = document.getElementById("chat");
+const msgInput = document.getElementById("msgInput");
+const fileInput = document.getElementById("fileInput");
+const linkInput = document.getElementById("linkInput");
+const linkPreview = document.getElementById("linkPreview");
+const sendBtn = document.getElementById("sendBtn");
+const nicknameInput = document.getElementById("nicknameInput");
 
-      const avatar = document.createElement("img");
-      avatar.className = "avatar";
-      avatar.src = photo || "";
-      avatar.alt = name || "user";
+let currentUser = null;
+let nickname = "";
 
-      const head = document.createElement("div");
-      head.className = "meta";
-      const nameEl = document.createElement("span");
-      nameEl.className = "name";
-      nameEl.textContent = name || "Usuario";
-      const timeEl = document.createElement("span");
-      timeEl.className = "time";
-      timeEl.textContent = fmtTime(ts || Date.now());
+// --- Funciones ---
+function fmtTime(ts) { return new Date(ts).toLocaleTimeString([], {hour:"2-digit", minute:"2-digit"}); }
 
-      head.appendChild(nameEl);
-      head.appendChild(timeEl);
+function renderMessage({ name, photo, text, url, ts }) {
+  const row = document.createElement("div");
+  row.className = "msg";
 
-      const bubble = document.createElement("div");
-      bubble.className = "bubble";
-      if (type === "image" && url) {
-        const img = document.createElement("img");
-        img.className = "content";
-        img.src = url;
-        img.alt = "Imagen";
-        img.loading = "lazy";
-        bubble.appendChild(img);
-      } else {
-        const p = document.createElement("div");
-        p.textContent = text || "";
-        bubble.appendChild(p);
-      }
+  const avatar = document.createElement("img");
+  avatar.className = "avatar";
+  avatar.src = photo||"";
+  avatar.alt = name||"user";
 
-      row.appendChild(avatar);
-      const block = document.createElement("div");
-      block.appendChild(head);
-      block.appendChild(bubble);
-      row.appendChild(block);
+  const head = document.createElement("div");
+  head.className = "meta";
+  const nameEl = document.createElement("span");
+  nameEl.className = "name";
+  nameEl.textContent = name||"Usuario";
+  const timeEl = document.createElement("span");
+  timeEl.className = "time";
+  timeEl.textContent = fmtTime(ts||Date.now());
+  head.appendChild(nameEl);
+  head.appendChild(timeEl);
 
-      chatBox.appendChild(row);
-      chatBox.scrollTop = chatBox.scrollHeight;
-    }
+  const bubble = document.createElement("div");
+  bubble.className = "bubble";
+  if(url){
+    const img = document.createElement("img");
+    img.className = "content";
+    img.src = url;
+    img.alt = "Imagen";
+    bubble.appendChild(img);
+  }
+  if(text) {
+    const p = document.createElement("div");
+    p.textContent = text;
+    bubble.appendChild(p);
+  }
 
-    // --- Escucha mensajes en tiempo real ---
-    const mensajesRef = dbRef(db, "mensajes");
-    onChildAdded(mensajesRef, (snap) => {
-      const v = snap.val() || {};
-      renderMessage({
-        name: v.name,
-        photo: v.photo,
-        text: v.text,
-        url: v.url,
-        type: v.type || "text",
-        ts: v.ts || Date.now()
-      });
-    });
+  row.appendChild(avatar);
+  const block = document.createElement("div");
+  block.appendChild(head);
+  block.appendChild(bubble);
+  row.appendChild(block);
+  chatBox.appendChild(row);
+  chatBox.scrollTop = chatBox.scrollHeight;
+}
 
-    // --- Envío de texto ---
-    async function sendText() {
-      if (!currentUser) return;
-      const text = msgInput.value.trim();
-      if (!text) return;
-      msgInput.value = "";
+// --- Escucha mensajes ---
+const mensajesRef = dbRef(db,"mensajes");
+onChildAdded(mensajesRef, snap=>{
+  const v = snap.val()||{};
+  renderMessage({
+    name: v.name,
+    photo: v.photo,
+    text: v.text,
+    url: v.url,
+    ts: v.ts||Date.now()
+  });
+});
 
-      await push(mensajesRef, {
-        uid: currentUser.uid,
-        name: currentUser.displayName,
-        photo: currentUser.photoURL,
-        type: "text",
-        text,
-        ts: Date.now(),       // almacena hora local legible
-        createdAt: serverTimestamp() // timestamp del servidor (para ordenar si lo necesitas)
-      });
-    }
+// --- Preview de link ---
+linkInput.addEventListener("input", ()=>{
+  const url = linkInput.value.trim();
+  if(url.match(/\.(jpeg|jpg|gif|png|webp)$/i)){
+    linkPreview.src = url;
+    linkPreview.style.display = "block";
+  } else {
+    linkPreview.src = "";
+    linkPreview.style.display = "none";
+  }
+});
 
-    sendBtn.addEventListener("click", sendText);
-    msgInput.addEventListener("keydown", (e) => {
-      if (e.key === "Enter") sendText();
-    });
+// --- Captura apodo ---
+nicknameInput.addEventListener("input", ()=>{
+  nickname = nicknameInput.value.trim();
+});
 
-    // --- Envío de imagen/GIF a Storage ---
-    uploadBtn.addEventListener("click", async () => {
-      if (!currentUser) return;
-      const file = fileInput.files?.[0];
-      if (!file) { alert("Selecciona una imagen o GIF primero."); return; }
+// --- Enviar mensaje combinado ---
+async function sendMessage(){
+  if(!currentUser) return;
 
-      uploadBtn.disabled = true;
-      uploadBtn.textContent = "Subiendo…";
+  let text = msgInput.value.trim();
+  let file = fileInput.files?.[0];
+  let link = linkInput.value.trim();
+  if(!text && !file && !link) return;
 
-      try {
-        // Carpeta por usuario/fecha para evitar colisiones
-        const path = `uploads/${currentUser.uid}/${Date.now()}_${file.name}`;
-        const fileRef = stRef(storage, path);
-        await uploadBytes(fileRef, file);
-        const url = await getDownloadURL(fileRef);
+  msgInput.value = "";
+  fileInput.value = "";
+  linkInput.value = "";
+  linkPreview.src = "";
+  linkPreview.style.display = "none";
 
-        await push(mensajesRef, {
-          uid: currentUser.uid,
-          name: currentUser.displayName,
-          photo: currentUser.photoURL,
-          type: "image",
-          url,
-          ts: Date.now(),
-          createdAt: serverTimestamp()
-        });
+  let url = link || "";
 
-        fileInput.value = "";
-      } catch (err) {
-        console.error(err);
-        alert("Error al subir la imagen: " + (err?.message || err));
-      } finally {
-        uploadBtn.disabled = false;
-        uploadBtn.textContent = "Enviar imagen/GIF";
-      }
-    });
+  if(file){
+    alert("Si quieres subir archivos reales, necesitarás configurar un servidor o Postimages API. Actualmente solo se envían links.");
+  }
 
-    // --- Auth: login/logout y estado ---
-    loginBtn.addEventListener("click", () => {
-      signInWithPopup(auth, provider).catch(err => {
-        console.error(err);
-        alert("Error al iniciar sesión: " + (err?.message || err));
-      });
-    });
-    logoutBtn.addEventListener("click", () => signOut(auth));
+  await push(mensajesRef,{
+    uid: currentUser.uid,
+    name: nickname || currentUser.displayName,
+    photo: currentUser.photoURL,
+    text: text||"",
+    url: url||"",
+    ts: Date.now()
+  });
+}
 
-    onAuthStateChanged(auth, (user) => {
-      currentUser = user || null;
-      if (user) {
-        userName.textContent = user.displayName || user.email || "Usuario";
-        if (user.photoURL) {
-          userPhoto.src = user.photoURL;
-          userPhoto.style.display = "block";
-        } else {
-          userPhoto.style.display = "none";
-        }
-        loginBtn.classList.add("hidden");
-        logoutBtn.classList.remove("hidden");
-        sendBtn.disabled = false;
-        uploadBtn.disabled = false;
-      } else {
-        userName.textContent = "No has iniciado sesión";
-        userPhoto.style.display = "none";
-        loginBtn.classList.remove("hidden");
-        logoutBtn.classList.add("hidden");
-        sendBtn.disabled = true;
-        uploadBtn.disabled = true;
-      }
-    });
-  </script>
+sendBtn.addEventListener("click", sendMessage);
+msgInput.addEventListener("keydown",(e)=>{if(e.key==="Enter") sendMessage();});
+
+// --- Google Sign-In ---
+loginBtn.addEventListener("click", ()=>signInWithPopup(auth,provider));
+logoutBtn.addEventListener("click", ()=>signOut(auth));
+
+onAuthStateChanged(auth,user=>{
+  currentUser = user||null;
+  if(user){
+    userName.textContent = user.displayName||user.email||"Usuario";
+    if(user.photoURL){ userPhoto.src=user.photoURL; userPhoto.style.display="block"; } else userPhoto.style.display="none";
+    loginBtn.classList.add("hidden");
+    logoutBtn.classList.remove("hidden");
+    sendBtn.disabled = false;
+  } else {
+    userName.textContent = "No has iniciado sesión";
+    userPhoto.style.display="none";
+    loginBtn.classList.remove("hidden");
+    logoutBtn.classList.add("hidden");
+    sendBtn.disabled = true;
+  }
+});
+</script>
 </body>
 </html>
