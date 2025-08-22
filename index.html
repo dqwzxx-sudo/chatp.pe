@@ -3,190 +3,71 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-<title>Chat en Tiempo Real (Texto + Imagen + Apodo)</title>
+<title>Grupo Fixion Oficial - Chat en Tiempo Real</title>
 <style>
-:root {
-  --border: #e5e7eb;
-  --bg: #fafafa;
-  --muted: #6b7280;
-  --primary: #ff0000;
-  --secondary: #f3f4f6;
+:root { --border:#e5e7eb; --bg:#fafafa; --muted:#6b7280; --primary:#f63b3b; }
+body {  font-family: system-ui, Arial, sans-serif; margin:0; padding:0; background:#f0f4f8; }
+header {
+  position: fixed; top:0; left:0; width:100%; height:60px;
+  background:#fff; border-bottom:1px solid var(--border); display:flex;
+  align-items:center; justify-content:space-between; padding:0 16px; z-index:1000;
+  box-shadow:0 2px 4px rgba(0,0,0,0.1);
 }
-body {
-  font-family: system-ui, Arial, sans-serif;
-  max-width: 720px;
-  margin: 24px auto;
-  padding: 0 16px;
-  background: var(--secondary);
+header .header-left { display:flex; align-items:center; gap:8px; }
+header .header-left img { width:40px; height:40px; border-radius:8px; }
+header .header-left h1 { font-size:1.2rem; margin:0; color:var(--primary); }
+header .header-right { margin-right: 35px; display:flex; align-items:center; gap:12px; }
+header .header-right .avatar { width:36px; height:36px; border-radius:50%; border:1px solid var(--border); }
+header .header-right .name { font-weight:600; color:#333; }
+header .header-right .btn { padding:6px 10px; border:1px solid var(--border); border-radius:8px; background:#fff; cursor:pointer; transition:all 0.2s; }
+header .header-right .btn:hover { background:var(--primary); color:#fff; border-color:var(--primary); }
+
+main { padding-top:70px; max-width:720px; margin:0 auto;padding-right: 15px;
+    padding-left: 15px; }
+
+#chat { border:1px solid var(--border); background:#fff; height:400px; overflow-y:auto; padding:12px; border-radius:12px; scroll-behavior:smooth; margin:16px 0; }
+.msg { display:flex; gap:10px; padding:10px 8px; border-bottom:1px solid var(--border); animation:fadeIn 0.3s ease; }
+@keyframes fadeIn { from {opacity:0; transform:translateY(10px);} to {opacity:1; transform:translateY(0);} }
+.msg:last-child { border-bottom:none; }
+.msg .meta { display:flex; align-items:center; gap:8px; }
+.msg .name { font-weight:600; color:var(--primary); }
+.msg .time { color:var(--muted); font-size:12px; }
+.msg .bubble { margin-left:48px; display:flex; flex-direction:column; gap:4px; }
+.msg img.content, .msg video.content, .msg iframe { max-width:280px; border-radius:10px; border:1px solid var(--border); }
+
+.controls { display:flex; gap:8px; margin-top:12px; flex-wrap:wrap; }
+.controls input[type="text"], .controls input[type="url"], .controls input[type="file"] { flex:1; padding:10px 12px; border:1px solid var(--border); border-radius:10px; }
+.btn { padding:8px 12px; border:1px solid var(--border); background:#fff; border-radius:10px; cursor:pointer; transition:all 0.2s ease; }
+.btn:hover { background:var(--primary); color:#fff; border-color:var(--primary); }
+.btn:disabled { opacity:.6; cursor:not-allowed; }
+.hint { color:var(--muted); font-size:12px; margin-top:4px; }
+.hidden { display:none; }
+#linkPreview, #filePreview { max-width:200px; display:none; border:1px solid #ccc; border-radius:8px; margin-top:4px; }
+
+@media(max-width:500px){
+  .controls { flex-direction:column; }
+  .msg img.content, .msg video.content, .msg iframe { max-width:100%; }
+}
+.avatar{
+  width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 1px solid var(--border);
 }
 /* === VIDEO DE FONDO === */
-#video-bg {
-  position: fixed;
-  top:0; left:0;
-  width:100%; height:100%;
-  object-fit: cover;
-  z-index: -1;
 
-  pointer-events: none;
-}
-
-/* === HEADER PRINCIPAL CON IMAGEN Y TEXTO === */
-.main-header {
-  
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 12px;
-  flex-wrap: wrap;
-  margin-bottom: 16px;
-}
-.main-header img {
-  width: 60px;
-  height: 60px;
-  object-fit: cover;
-  border-radius: 50%;
-  border: 2px solid var(--primary);
-}
-.main-header h1 {
-  font-size: 1.8rem;
-  color: var(--primary);
-  margin: 0;
-  font-weight: 700;
-  text-align: center;
-}
-
-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  margin-bottom: 16px;
-  flex-wrap: wrap;
-  gap: 8px;
-}
-.user-pill {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-}
-.avatar {
-  width: 40px;
-  height: 40px;
-  border-radius: 50%;
-  object-fit: cover;
-  border: 1px solid var(--border);
-}
-.btn {
-  padding: 8px 12px;
-  border: 1px solid var(--border);
-  background: #fff;
-  border-radius: 10px;
-  cursor: pointer;
-  transition: 0.2s;
-}
-.btn:hover:not(:disabled) {
-  background: var(--primary);
-  color: #fff;
-}
-.btn:disabled {
-  opacity: 0.6;
-  cursor: not-allowed;
-}
-#chat {
-  background-color: #0000008c;
-  border: 1px solid var(--border);
-  background: #fff;
-  height: 420px;
-  overflow-y: auto;
-  padding: 12px;
-  border-radius: 12px;
-}
-.msg {
-  display: flex;
-  gap: 10px;
-  padding: 10px 8px;
-  border-bottom: 1px solid var(--border);
-  flex-wrap: wrap;
-}
-.msg:last-child {
-  border-bottom: none;
-}
-.msg .meta {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  flex-wrap: wrap;
-}
-.msg .name {
-  font-weight: 600;
-}
-.msg .time {
-  color: var(--muted);
-  font-size: 12px;
-}
-.msg .bubble {
-  margin-left: 48px;
-  word-break: break-word;
-  max-width: calc(100% - 60px);
-}
-.msg img.content {
-  max-width: 280px;
-  border-radius: 10px;
-  border: 1px solid var(--border);
-}
-.controls {
-  display: flex;
-  gap: 8px;
-  margin-top: 12px;
-  flex-wrap: wrap;
-}
-.controls input[type="text"], .controls input[type="url"], .controls input[type="file"] {
-  flex: 1;
-  padding: 10px 12px;
-  border: 1px solid var(--border);
-  border-radius: 10px;
-}
-.hint {
-  color: var(--muted);
-  font-size: 12px;
-  margin-top: 4px;
-}
-.hidden { display: none; }
-#linkPreview {
-  max-width: 200px;
-  display: none;
-  border: 1px solid #ccc;
-  border-radius: 8px;
-  margin-top: 4px;
-}
-@media(max-width: 480px){
-  #chat { height: 300px;     background-color: #0000008c;}
-  .msg .bubble { margin-left: 40px; }
-  .controls { flex-direction: column; }
-  .controls input, .controls button { width: 100%; }
-  .main-header h1 { font-size: 1.5rem; }
-  .main-header img { width: 50px; height: 50px; }
-}
 </style>
 </head>
 <body>
-
-  <!-- VIDEO DE FONDO -->
-<video id="video-bg" autoplay muted loop>
-  <source src="./img/fondo.mp4" type="video/mp4">
-</video>
-<!-- HEADER CON IMAGEN Y TEXTO DEL GRUPO -->
-<div class="main-header">
-  <img src="./img/logo.png" alt="Logo Grupo Fixion">
-  <h1>Grupo Fixion Oficial</h1>
-</div>
-
 <header>
-  <div class="user-pill" id="user-pill">
-    <img id="user-photo" class="avatar" src="" alt="avatar" style="display:none;">
-    <div id="user-name" class="name">No has iniciado sesión</div>
+  <div class="header-left">
+    <img src="./img/logo.png" alt="Grupo Fixion Logo">
+    <h1>Grupo Fixion Oficial</h1>
   </div>
-  <div>
-    <button id="loginBtn" class="btn">Iniciar sesión con Google</button>
+  <div class="header-right">
+    <img id="user-photo" class="avatar" src="" alt="avatar" style="display:none;">
+    <span id="user-name" class="name">No has iniciado sesión</span>
     <button id="logoutBtn" class="btn hidden">Cerrar sesión</button>
   </div>
 </header>
@@ -195,24 +76,25 @@ header {
   <div id="chat"></div>
 
   <div class="controls">
-    <input id="nicknameInput" type="text" placeholder="Ingresa tu apodo" />
+    <input id="nicknameInput" type="text" placeholder="Ingresa tu apodo">
   </div>
 
   <div class="controls">
-    <input id="msgInput" type="text" placeholder="Escribe un mensaje…" />
+    <input id="msgInput" type="text" placeholder="Escribe un mensaje…">
   </div>
 
-  <div class="controls" style="margin-top:8px;">
-    <input id="fileInput" type="file" accept="image/*" />
-    <input id="linkInput" type="url" placeholder="O pega un link de imagen…" />
+  <div class="controls">
+    <input id="fileInput" type="file" accept="image/*,video/*">
+    <input id="linkInput" type="url" placeholder="O pega un link de imagen/video…">
     <button id="sendBtn" class="btn" disabled>Enviar</button>
   </div>
 
   <div class="controls">
     <img id="linkPreview" alt="Previsualización">
+    <video id="filePreview" controls></video>
   </div>
 
-  <div class="hint">Puedes enviar texto y/o imagen (archivo o link) con un solo botón.</div>
+  <div class="hint">Puedes enviar texto y/o imagen/video (archivo o link) con un solo botón.</div>
 </main>
 
 <script type="module">
@@ -245,15 +127,22 @@ const msgInput = document.getElementById("msgInput");
 const fileInput = document.getElementById("fileInput");
 const linkInput = document.getElementById("linkInput");
 const linkPreview = document.getElementById("linkPreview");
+const filePreview = document.getElementById("filePreview");
 const sendBtn = document.getElementById("sendBtn");
 const nicknameInput = document.getElementById("nicknameInput");
 
 let currentUser = null;
 let nickname = "";
 
-function fmtTime(ts) { return new Date(ts).toLocaleTimeString([], {hour:"2-digit", minute:"2-digit"}); }
+function fmtTime(ts){ return new Date(ts).toLocaleTimeString([], {hour:"2-digit", minute:"2-digit"}); }
 
-function renderMessage({ name, photo, text, url, ts }) {
+function parseVideoUrl(url){
+  const ytMatch = url.match(/(?:youtu\.be\/|youtube\.com\/watch\?v=)([a-zA-Z0-9_-]+)/);
+  if(ytMatch) return `https://www.youtube.com/embed/${ytMatch[1]}`;
+  return null;
+}
+
+function renderMessage({ name, photo, text, url, ts }){
   const row = document.createElement("div");
   row.className = "msg";
 
@@ -275,14 +164,34 @@ function renderMessage({ name, photo, text, url, ts }) {
 
   const bubble = document.createElement("div");
   bubble.className = "bubble";
+
   if(url){
-    const img = document.createElement("img");
-    img.className = "content";
-    img.src = url;
-    img.alt = "Imagen";
-    bubble.appendChild(img);
+    const videoEmbed = parseVideoUrl(url);
+    if(videoEmbed){
+      const iframe = document.createElement("iframe");
+      iframe.src = videoEmbed;
+      iframe.width = "280";
+      iframe.height = "158";
+      iframe.frameBorder = "0";
+      iframe.allow = "accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture";
+      iframe.allowFullscreen = true;
+      bubble.appendChild(iframe);
+    } else if(url.match(/\.(mp4|webm|ogg)$/i)){
+      const vid = document.createElement("video");
+      vid.src = url;
+      vid.controls = true;
+      vid.className = "content";
+      bubble.appendChild(vid);
+    } else {
+      const img = document.createElement("img");
+      img.className = "content";
+      img.src = url;
+      img.alt = "Contenido";
+      bubble.appendChild(img);
+    }
   }
-  if(text) {
+
+  if(text){
     const p = document.createElement("div");
     p.textContent = text;
     bubble.appendChild(p);
@@ -300,34 +209,31 @@ function renderMessage({ name, photo, text, url, ts }) {
 const mensajesRef = dbRef(db,"mensajes");
 onChildAdded(mensajesRef, snap=>{
   const v = snap.val()||{};
-  renderMessage({
-    name: v.name,
-    photo: v.photo,
-    text: v.text,
-    url: v.url,
-    ts: v.ts||Date.now()
-  });
+  renderMessage({ name:v.name, photo:v.photo, text:v.text, url:v.url, ts:v.ts||Date.now() });
 });
 
 linkInput.addEventListener("input", ()=>{
   const url = linkInput.value.trim();
-  if(url.match(/\.(jpeg|jpg|gif|png|webp)$/i)){
+  if(url.match(/\.(jpeg|jpg|gif|png|webp|mp4|webm|ogg)$/i) || parseVideoUrl(url)){
     linkPreview.src = url;
     linkPreview.style.display = "block";
+    filePreview.src = url;
+    filePreview.style.display = "block";
   } else {
     linkPreview.src = "";
     linkPreview.style.display = "none";
+    filePreview.src = "";
+    filePreview.style.display = "none";
   }
 });
 
-nicknameInput.addEventListener("input", ()=>{ nickname = nicknameInput.value.trim(); });
+nicknameInput.addEventListener("input", ()=>{nickname = nicknameInput.value.trim();});
 
 async function sendMessage(){
   if(!currentUser) return;
-
-  let text = msgInput.value.trim();
-  let file = fileInput.files?.[0];
-  let link = linkInput.value.trim();
+  const text = msgInput.value.trim();
+  const file = fileInput.files?.[0];
+  const link = linkInput.value.trim();
   if(!text && !file && !link) return;
 
   msgInput.value = "";
@@ -335,11 +241,12 @@ async function sendMessage(){
   linkInput.value = "";
   linkPreview.src = "";
   linkPreview.style.display = "none";
+  filePreview.src = "";
+  filePreview.style.display = "none";
 
-  let url = link || "";
-
+  let urlToSend = link || "";
   if(file){
-    alert("Si quieres subir archivos reales, necesitarás configurar un servidor o Postimages API. Actualmente solo se envían links.");
+    alert("Para subir archivos reales, configura un servidor o Postimages API. Actualmente solo se envían links.");
   }
 
   await push(mensajesRef,{
@@ -347,15 +254,15 @@ async function sendMessage(){
     name: nickname || currentUser.displayName,
     photo: currentUser.photoURL,
     text: text||"",
-    url: url||"",
+    url: urlToSend||"",
     ts: Date.now()
   });
 }
 
 sendBtn.addEventListener("click", sendMessage);
-msgInput.addEventListener("keydown",(e)=>{if(e.key==="Enter") sendMessage();});
+msgInput.addEventListener("keydown", (e)=>{if(e.key==="Enter") sendMessage();});
 
-loginBtn.addEventListener("click", ()=>signInWithPopup(auth,provider));
+loginBtn?.addEventListener("click", ()=>signInWithPopup(auth,provider));
 logoutBtn.addEventListener("click", ()=>signOut(auth));
 
 onAuthStateChanged(auth,user=>{
@@ -363,13 +270,13 @@ onAuthStateChanged(auth,user=>{
   if(user){
     userName.textContent = user.displayName||user.email||"Usuario";
     if(user.photoURL){ userPhoto.src=user.photoURL; userPhoto.style.display="block"; } else userPhoto.style.display="none";
-    loginBtn.classList.add("hidden");
+    loginBtn?.classList.add("hidden");
     logoutBtn.classList.remove("hidden");
     sendBtn.disabled = false;
   } else {
     userName.textContent = "No has iniciado sesión";
     userPhoto.style.display="none";
-    loginBtn.classList.remove("hidden");
+    loginBtn?.classList.remove("hidden");
     logoutBtn.classList.add("hidden");
     sendBtn.disabled = true;
   }
