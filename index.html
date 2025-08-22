@@ -5,29 +5,181 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 <title>Chat en Tiempo Real (Texto + Imagen + Apodo)</title>
 <style>
-:root { --border:#e5e7eb; --bg:#fafafa; --muted:#6b7280; }
-body { font-family: system-ui, Arial, sans-serif; max-width: 720px; margin: 24px auto; padding: 0 16px; }
-header { display:flex; align-items:center; justify-content:space-between; margin-bottom:16px; }
-.user-pill { display:flex; align-items:center; gap:10px; }
-.avatar { width:40px; height:40px; border-radius:50%; object-fit:cover; border:1px solid var(--border); }
-.btn { padding:8px 12px; border:1px solid var(--border); background:#fff; border-radius:10px; cursor:pointer; }
-.btn:disabled { opacity:.6; cursor:not-allowed; }
-#chat { border:1px solid var(--border); background:#fff; height:420px; overflow-y:auto; padding:12px; border-radius:12px; }
-.msg { display:flex; gap:10px; padding:10px 8px; border-bottom:1px solid var(--border); }
-.msg:last-child { border-bottom:none; }
-.msg .meta { display:flex; align-items:center; gap:8px; }
-.msg .name { font-weight:600; }
-.msg .time { color:var(--muted); font-size:12px; }
-.msg .bubble { margin-left:48px; }
-.msg img.content { max-width:280px; border-radius:10px; border:1px solid var(--border); }
-.controls { display:flex; gap:8px; margin-top:12px; }
-.controls input[type="text"], .controls input[type="url"], .controls input[type="file"] { flex:1; padding:10px 12px; border:1px solid var(--border); border-radius:10px; }
-.hint { color:var(--muted); font-size:12px; margin-top:4px; }
-.hidden { display:none; }
-#linkPreview { max-width:200px; display:none; border:1px solid #ccc; border-radius:8px; margin-top:4px; }
+:root {
+  --border: #e5e7eb;
+  --bg: #fafafa;
+  --muted: #6b7280;
+  --primary: #ff0000;
+  --secondary: #f3f4f6;
+}
+body {
+  font-family: system-ui, Arial, sans-serif;
+  max-width: 720px;
+  margin: 24px auto;
+  padding: 0 16px;
+  background: var(--secondary);
+}
+/* === VIDEO DE FONDO === */
+#video-bg {
+  position: fixed;
+  top:0; left:0;
+  width:100%; height:100%;
+  object-fit: cover;
+  z-index: -1;
+
+  pointer-events: none;
+}
+
+/* === HEADER PRINCIPAL CON IMAGEN Y TEXTO === */
+.main-header {
+  
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin-bottom: 16px;
+}
+.main-header img {
+  width: 60px;
+  height: 60px;
+  object-fit: cover;
+  border-radius: 50%;
+  border: 2px solid var(--primary);
+}
+.main-header h1 {
+  font-size: 1.8rem;
+  color: var(--primary);
+  margin: 0;
+  font-weight: 700;
+  text-align: center;
+}
+
+header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 16px;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.user-pill {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.avatar {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 1px solid var(--border);
+}
+.btn {
+  padding: 8px 12px;
+  border: 1px solid var(--border);
+  background: #fff;
+  border-radius: 10px;
+  cursor: pointer;
+  transition: 0.2s;
+}
+.btn:hover:not(:disabled) {
+  background: var(--primary);
+  color: #fff;
+}
+.btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+#chat {
+  background-color: #0000008c;
+  border: 1px solid var(--border);
+  background: #fff;
+  height: 420px;
+  overflow-y: auto;
+  padding: 12px;
+  border-radius: 12px;
+}
+.msg {
+  display: flex;
+  gap: 10px;
+  padding: 10px 8px;
+  border-bottom: 1px solid var(--border);
+  flex-wrap: wrap;
+}
+.msg:last-child {
+  border-bottom: none;
+}
+.msg .meta {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.msg .name {
+  font-weight: 600;
+}
+.msg .time {
+  color: var(--muted);
+  font-size: 12px;
+}
+.msg .bubble {
+  margin-left: 48px;
+  word-break: break-word;
+  max-width: calc(100% - 60px);
+}
+.msg img.content {
+  max-width: 280px;
+  border-radius: 10px;
+  border: 1px solid var(--border);
+}
+.controls {
+  display: flex;
+  gap: 8px;
+  margin-top: 12px;
+  flex-wrap: wrap;
+}
+.controls input[type="text"], .controls input[type="url"], .controls input[type="file"] {
+  flex: 1;
+  padding: 10px 12px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+}
+.hint {
+  color: var(--muted);
+  font-size: 12px;
+  margin-top: 4px;
+}
+.hidden { display: none; }
+#linkPreview {
+  max-width: 200px;
+  display: none;
+  border: 1px solid #ccc;
+  border-radius: 8px;
+  margin-top: 4px;
+}
+@media(max-width: 480px){
+  #chat { height: 300px;     background-color: #0000008c;}
+  .msg .bubble { margin-left: 40px; }
+  .controls { flex-direction: column; }
+  .controls input, .controls button { width: 100%; }
+  .main-header h1 { font-size: 1.5rem; }
+  .main-header img { width: 50px; height: 50px; }
+}
 </style>
 </head>
 <body>
+
+  <!-- VIDEO DE FONDO -->
+<video id="video-bg" autoplay muted loop>
+  <source src="./img/fondo.mp4" type="video/mp4">
+</video>
+<!-- HEADER CON IMAGEN Y TEXTO DEL GRUPO -->
+<div class="main-header">
+  <img src="./img/logo.png" alt="Logo Grupo Fixion">
+  <h1>Grupo Fixion Oficial</h1>
+</div>
+
 <header>
   <div class="user-pill" id="user-pill">
     <img id="user-photo" class="avatar" src="" alt="avatar" style="display:none;">
@@ -68,7 +220,6 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.1/firebas
 import { getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-auth.js";
 import { getDatabase, ref as dbRef, push, onChildAdded } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-database.js";
 
-// --- Configuración Firebase ---
 const firebaseConfig = {
   apiKey: "AIzaSyAu-L2QmUixoxM3SzYfV55ZL85CSHq_P6Y",
   authDomain: "chat-realtime-2b260.firebaseapp.com",
@@ -85,7 +236,6 @@ const auth = getAuth(app);
 const provider = new GoogleAuthProvider();
 const db = getDatabase(app);
 
-// --- DOM ---
 const loginBtn = document.getElementById("loginBtn");
 const logoutBtn = document.getElementById("logoutBtn");
 const userPhoto = document.getElementById("user-photo");
@@ -101,7 +251,6 @@ const nicknameInput = document.getElementById("nicknameInput");
 let currentUser = null;
 let nickname = "";
 
-// --- Funciones ---
 function fmtTime(ts) { return new Date(ts).toLocaleTimeString([], {hour:"2-digit", minute:"2-digit"}); }
 
 function renderMessage({ name, photo, text, url, ts }) {
@@ -148,7 +297,6 @@ function renderMessage({ name, photo, text, url, ts }) {
   chatBox.scrollTop = chatBox.scrollHeight;
 }
 
-// --- Escucha mensajes ---
 const mensajesRef = dbRef(db,"mensajes");
 onChildAdded(mensajesRef, snap=>{
   const v = snap.val()||{};
@@ -161,7 +309,6 @@ onChildAdded(mensajesRef, snap=>{
   });
 });
 
-// --- Preview de link ---
 linkInput.addEventListener("input", ()=>{
   const url = linkInput.value.trim();
   if(url.match(/\.(jpeg|jpg|gif|png|webp)$/i)){
@@ -173,12 +320,8 @@ linkInput.addEventListener("input", ()=>{
   }
 });
 
-// --- Captura apodo ---
-nicknameInput.addEventListener("input", ()=>{
-  nickname = nicknameInput.value.trim();
-});
+nicknameInput.addEventListener("input", ()=>{ nickname = nicknameInput.value.trim(); });
 
-// --- Enviar mensaje combinado ---
 async function sendMessage(){
   if(!currentUser) return;
 
@@ -212,7 +355,6 @@ async function sendMessage(){
 sendBtn.addEventListener("click", sendMessage);
 msgInput.addEventListener("keydown",(e)=>{if(e.key==="Enter") sendMessage();});
 
-// --- Google Sign-In ---
 loginBtn.addEventListener("click", ()=>signInWithPopup(auth,provider));
 logoutBtn.addEventListener("click", ()=>signOut(auth));
 
